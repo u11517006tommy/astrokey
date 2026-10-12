@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星際之鍵：末日街道逃亡 | AstroKeys Street Escape</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'space-dark': '#0a0612',
+                        'space-card': '#160d29',
+                        'neon-cyan': '#00f0ff',
+                        'neon-pink': '#ff007f',
+                        'alien-green': '#39ff14',
+                        'star-gold': '#ffe600',
+                        'fire-orange': '#ff5500'
+                    },
+                    fontFamily: {
+                        'pixel': ['"Press Start 2P"', 'monospace'],
+                        'pixel-zh': ['"DotGothic16"', '"Press Start 2P"', 'sans-serif'],
+                        'vt': ['VT323', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0a0612;
+            color: #ffffff;
+            font-family: 'DotGothic16', sans-serif;
+            overflow: hidden;
+            image-rendering: pixelated;
+            user-select: none;
+        }
+
+        .crt-overlay {
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        .pixel-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            font-family: 'Press Start 2P', 'DotGothic16', sans-serif;
+            text-transform: uppercase;
+            color: #fff;
+            background-color: #ff007f;
+            box-shadow: inset -4px -4px 0px 0px #99004d, inset 4px 4px 0px 0px #ff66b2, 0px 6px 0px 0px #000;
+            border: 3px solid #000;
+            transition: all 0.1s ease;
+            cursor: pointer;
+        }
+
+        .pixel-btn:hover {
+            background-color: #ff3399;
+            transform: translateY(-2px);
+            box-shadow: inset -4px -4px 0px 0px #b30059, inset 4px 4px 0px 0px #ff99cc, 0px 8px 0px 0px #000;
+        }
+
+        .pixel-btn:active {
+            transform: translateY(4px);
+            box-shadow: inset -4px -4px 0px 0px #99004d, inset 4px 4px 0px 0px #ff66b2, 0px 2px 0px 0px #000;
+        }
+
+        .pixel-box {
+            background: #160d29;
+            border: 4px solid #ff5500;
+            box-shadow: 0 0 25px rgba(255, 85, 0, 0.35), inset 0 0 15px rgba(0, 0, 0, 0.7);
+        }
+
+        .glow-title {
+            text-shadow: 3px 3px 0px #ff007f, -3px -3px 0px #ff5500, 0 0 15px rgba(255, 85, 0, 0.8);
+        }
+
+        .key-cap {
+            background: #231742;
+            border: 2px solid #00f0ff;
+            box-shadow: 0 4px 0 #000;
+            color: #ffe600;
+            font-family: 'Press Start 2P', monospace;
+            border-radius: 4px;
+            transition: all 0.08s ease;
+        }
+
+        .key-cap.active-key {
+            background: #ff007f !important;
+            color: #ffffff !important;
+            border-color: #ffe600 !important;
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #000 !important;
+        }
+
+        .key-cap.target-key {
+            animation: target-pulse 0.6s infinite alternate;
+            border-color: #39ff14 !important;
+        }
+
+        @keyframes target-pulse {
+            0% { transform: scale(1); box-shadow: 0 0 5px #39ff14; }
+            100% { transform: scale(1.1); box-shadow: 0 0 18px #39ff14; }
+        }
+
+        .finger-pinky { border-color: #ff007f; color: #ff007f; }
+        .finger-ring { border-color: #ff9900; color: #ff9900; }
+        .finger-middle { border-color: #ffe600; color: #ffe600; }
+        .finger-index { border-color: #39ff14; color: #39ff14; }
+        .finger-thumb { border-color: #00f0ff; color: #00f0ff; }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between relative overflow-hidden select-none">
+
+    <!-- Background Animation Canvas -->
+    <canvas id="game-canvas" class="absolute inset-0 z-0 pointer-events-none"></canvas>
+
+    <!-- CRT Overlay Screen Layer -->
+    <div id="crt-layer" class="crt-overlay absolute inset-0 z-50 pointer-events-none"></div>
+
+    <!-- Header Navigation bar -->
+    <header class="relative z-20 w-full px-4 py-3 flex justify-between items-center bg-space-dark/90 border-b-2 border-orange-900">
+        <div class="flex items-center gap-3">
+            <span class="font-pixel text-fire-orange text-sm sm:text-base tracking-wider">ASTROKEYS</span>
+            <span class="hidden sm:inline-block font-pixel-zh text-xs text-star-gold bg-space-card px-2.5 py-1 border border-orange-600 rounded">
+                🏃 地球街道 ➔ 🛰️ 太空站 (重機槍突圍)
+            </span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button id="sound-btn" class="bg-space-card hover:bg-purple-900 text-xs px-3 py-1.5 border-2 border-star-gold text-star-gold font-pixel flex items-center gap-2 cursor-pointer rounded">
+                <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+                <span class="hidden md:inline">音效: ON</span>
+            </button>
+            <button id="crt-btn" class="bg-space-card hover:bg-purple-900 text-xs px-3 py-1.5 border-2 border-neon-cyan text-neon-cyan font-pixel flex items-center gap-2 cursor-pointer rounded">
+                <i class="fa-solid fa-tv"></i>
+                <span class="hidden md:inline">CRT: ON</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="relative z-10 flex-1 flex flex-col items-center justify-center p-4">
+
+        <!-- 1. START SCREEN -->
+        <div id="start-screen" class="pixel-box max-w-xl w-full p-6 sm:p-8 text-center flex flex-col items-center gap-5 z-30 rounded-lg">
+            <div class="inline-block bg-fire-orange/20 text-fire-orange border border-fire-orange px-3 py-1 font-pixel text-xs rounded">
+                STREET ESCAPE MISSION
+            </div>
+            
+            <h1 class="font-pixel-zh text-3xl sm:text-4xl text-white glow-title">
+                星際之鍵：末日街道逃亡
+            </h1>
+
+            <p class="font-pixel-zh text-sm sm:text-base text-slate-300 leading-relaxed">
+                外星異種圍攻城市！你手持<span class="text-fire-orange font-bold">重型機關槍</span>奔跑在混亂馬路上。<br>
+                精準敲擊字母即可發射機關槍掃射怪獸，一路突破防線奔向遠方的<span class="text-star-gold font-bold">太空站</span>！
+            </p>
+
+            <div class="w-full bg-space-dark/95 p-4 border border-orange-600 text-left font-pixel-zh text-xs sm:text-sm space-y-2 rounded">
+                <div class="text-star-gold font-bold mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-keyboard"></i> 基準行（Home Row）指法對應：
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-300 mb-2">
+                    <div>🖐️ <span class="text-neon-pink font-bold">左手</span>: A (小指) S (無名) D (中) F/G (食)</div>
+                    <div>🤚 <span class="text-neon-cyan font-bold">右手</span>: H/J (食) K (中) L (無名)</div>
+                </div>
+
+                <div class="flex flex-wrap gap-1.5 justify-center py-2 bg-black/60 border border-purple-800 p-2 rounded">
+                    <span class="key-cap finger-pinky px-2.5 py-1">A</span>
+                    <span class="key-cap finger-ring px-2.5 py-1">S</span>
+                    <span class="key-cap finger-middle px-2.5 py-1">D</span>
+                    <span class="key-cap finger-index px-2.5 py-1">F</span>
+                    <span class="key-cap finger-index px-2.5 py-1">G</span>
+                    <span class="key-cap finger-index px-2.5 py-1">H</span>
+                    <span class="key-cap finger-index px-2.5 py-1">J</span>
+                    <span class="key-cap finger-middle px-2.5 py-1">K</span>
+                    <span class="key-cap finger-ring px-2.5 py-1">L</span>
+                    <span class="key-cap finger-thumb px-4 py-1 text-[10px]">SPACE ⎵</span>
+                </div>
+                <p class="text-alien-green text-center text-xs mt-2 font-bold">🎯 突圍任務：用機關槍消滅 <span class="text-white underline decoration-fire-orange">15 隻</span> 攔路怪物</p>
+            </div>
+
+            <button id="launch-btn" class="pixel-btn w-full py-4 text-lg text-white font-pixel-zh tracking-widest mt-2 rounded">
+                🔫 扣緊扳機．馬路奔跑突圍
+            </button>
+        </div>
+
+        <!-- 2. GAME HUD & OVERLAY -->
+        <div id="game-hud" class="hidden absolute top-2 left-2 right-2 flex flex-col gap-2 max-w-5xl mx-auto pointer-events-none">
+            <!-- HUD Top Metrics Row -->
+            <div class="flex flex-wrap justify-between items-center bg-space-dark/90 p-3 border-2 border-fire-orange backdrop-blur text-xs sm:text-sm font-pixel rounded">
+                <div class="flex items-center gap-2 text-star-gold">
+                    <i class="fa-solid fa-ghost text-fire-orange animate-pulse"></i>
+                    <span>擊滅怪獸: <span id="monster-count" class="text-white text-base font-bold">0</span> / 15</span>
+                </div>
+
+                <div class="flex items-center gap-4 text-neon-cyan">
+                    <span>WPM: <span id="wpm-text" class="text-white">0</span></span>
+                    <span>正確率: <span id="acc-text" class="text-alien-green">100%</span></span>
+                    <span>連擊: <span id="combo-text" class="text-star-gold font-bold">0x</span></span>
+                </div>
+
+                <div class="flex items-center gap-1 text-neon-pink text-base">
+                    <span>HP:</span>
+                    <div id="lives-container" class="flex gap-1">
+                        <i class="fa-solid fa-heart text-neon-pink"></i>
+                        <i class="fa-solid fa-heart text-neon-pink"></i>
+                        <i class="fa-solid fa-heart text-neon-pink"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar (Earth Road -> Space Station Base) -->
+            <div class="w-full bg-space-dark/90 border border-orange-600 p-2 flex items-center gap-3 rounded">
+                <span class="font-pixel-zh text-xs text-fire-orange flex items-center gap-1 shrink-0">
+                    <i class="fa-solid fa-road"></i> 地球街道
+                </span>
+                <div class="flex-1 bg-black h-3.5 relative border border-purple-800 rounded overflow-hidden">
+                    <div id="progress-fill" class="bg-gradient-to-r from-fire-orange via-neon-pink to-neon-cyan h-full w-0 transition-all duration-300"></div>
+                    <div id="hero-progress-icon" class="absolute top-1/2 -translate-y-1/2 -ml-2 text-xs transition-all duration-300" style="left: 0%;">
+                        🏃‍♂️
+                    </div>
+                </div>
+                <span class="font-pixel-zh text-xs text-star-gold flex items-center gap-1 shrink-0">
+                    <i class="fa-solid fa-satellite text-star-gold"></i> 太空站
+                </span>
+            </div>
+
+            <!-- Target Finger Assistant Box -->
+            <div class="self-center bg-black/85 border-2 border-neon-cyan px-5 py-2 rounded-lg text-xs font-pixel-zh flex items-center gap-3 shadow-lg">
+                <span class="text-slate-300">🎯 鎖定怪獸建議指法：</span>
+                <span id="finger-hint" class="text-star-gold font-bold text-sm sm:text-base">尋找目標中...</span>
+            </div>
+        </div>
+
+        <!-- 3. VICTORY SCREEN -->
+        <div id="victory-screen" class="hidden pixel-box max-w-lg w-full p-6 text-center flex-col items-center gap-5 z-30 rounded-lg">
+            <div class="text-5xl animate-bounce">🛰️</div>
+            <h2 class="font-pixel-zh text-3xl text-star-gold glow-title">順利登上太空站！</h2>
+            <p class="font-pixel-zh text-sm text-slate-200">
+                太勇猛了！你一路掃射消滅 15 隻攔路怪獸，成功沿著混亂馬路衝向太空站發射基地！
+            </p>
+
+            <div class="w-full bg-black/60 p-4 border border-neon-cyan font-vt text-2xl text-left space-y-2 rounded">
+                <div class="flex justify-between border-b border-purple-900 pb-1">
+                    <span class="text-slate-400">突圍狀態:</span>
+                    <span class="text-alien-green">MISSION ACCOMPLISHED</span>
+                </div>
+                <div class="flex justify-between border-b border-purple-900 pb-1">
+                    <span class="text-slate-400">打字速度 (WPM):</span>
+                    <span id="vic-wpm" class="text-star-gold">0</span>
+                </div>
+                <div class="flex justify-between border-b border-purple-900 pb-1">
+                    <span class="text-slate-400">射擊正確率:</span>
+                    <span id="vic-acc" class="text-neon-cyan">100%</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">消滅外星怪獸:</span>
+                    <span class="text-fire-orange">15 / 15</span>
+                </div>
+            </div>
+
+            <button id="replay-btn" class="pixel-btn w-full py-3 text-white font-pixel-zh tracking-widest rounded">
+                🔄 再次執行街道突圍
+            </button>
+        </div>
+
+        <!-- 4. GAME OVER SCREEN -->
+        <div id="gameover-screen" class="hidden pixel-box max-w-lg w-full p-6 text-center flex-col items-center gap-5 z-30 rounded-lg">
+            <div class="text-5xl">💥</div>
+            <h2 class="font-pixel-zh text-3xl text-neon-pink">在馬路上遭到怪獸圍攻！</h2>
+            <p class="font-pixel-zh text-sm text-slate-300">
+                怪獸靠近並扣除了你的生命值。調整機關槍彈藥與手勢指法，再次挑戰這條逃亡之路！
+            </p>
+
+            <button id="retry-btn" class="pixel-btn w-full py-3 text-white font-pixel-zh tracking-widest rounded">
+                🏃‍♂️ 重新跑動突破
+            </button>
+        </div>
+
+    </main>
+
+    <!-- On-screen Finger Assistant Keyboard Footer -->
+    <footer id="keyboard-hud" class="relative z-20 w-full bg-space-dark/95 border-t-2 border-orange-900 p-3 flex flex-col items-center justify-center">
+        <div class="text-[11px] font-pixel-zh text-slate-400 mb-1.5 flex flex-wrap justify-center gap-x-4 gap-y-1">
+            <span class="text-neon-pink">左手: 小指(A) 無名指(S) 中指(D) 食指(F,G)</span>
+            <span class="text-neon-cyan">右手: 食指(H,J) 中指(K) 無名指(L)</span>
+            <span class="text-star-gold">雙手大拇指: SPACE</span>
+        </div>
+        
+        <div class="flex flex-wrap justify-center gap-1.5 max-w-2xl w-full">
+            <button data-key="A" id="key-A" class="key-cap finger-pinky px-3 py-2 text-xs sm:text-sm font-bold">A</button>
+            <button data-key="S" id="key-S" class="key-cap finger-ring px-3 py-2 text-xs sm:text-sm font-bold">S</button>
+            <button data-key="D" id="key-D" class="key-cap finger-middle px-3 py-2 text-xs sm:text-sm font-bold">D</button>
+            <button data-key="F" id="key-F" class="key-cap finger-index px-3 py-2 text-xs sm:text-sm font-bold">F</button>
+            <button data-key="G" id="key-G" class="key-cap finger-index px-3 py-2 text-xs sm:text-sm font-bold">G</button>
+            <button data-key="H" id="key-H" class="key-cap finger-index px-3 py-2 text-xs sm:text-sm font-bold">H</button>
+            <button data-key="J" id="key-J" class="key-cap finger-index px-3 py-2 text-xs sm:text-sm font-bold">J</button>
+            <button data-key="K" id="key-K" class="key-cap finger-middle px-3 py-2 text-xs sm:text-sm font-bold">K</button>
+            <button data-key="L" id="key-L" class="key-cap finger-ring px-3 py-2 text-xs sm:text-sm font-bold">L</button>
+            <button data-key=" " id="key-SPACE" class="key-cap finger-thumb px-8 py-2 text-xs sm:text-sm font-bold">SPACE ⎵</button>
+        </div>
+    </footer>
+
+    <script>
+        // --- Retro Audio Synthesizer (Web Audio API) ---
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'machinegun') {
+                // Rapid Machine Gun Burst Sound Effect
+                for (let i = 0; i < 3; i++) {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    const delay = i * 0.035;
+                    osc.frequency.setValueAtTime(340 - i * 30, now + delay);
+                    osc.frequency.exponentialRampToValueAtTime(50, now + delay + 0.03);
+                    gain.gain.setValueAtTime(0.28, now + delay);
+                    gain.gain.linearRampToValueAtTime(0.01, now + delay + 0.03);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + delay);
+                    osc.stop(now + delay + 0.03);
+                }
+            } else if (type === 'explosion') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(160, now);
+                osc.frequency.setValueAtTime(70, now + 0.06);
+                osc.frequency.setValueAtTime(30, now + 0.16);
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
+                osc.start(now);
+                osc.stop(now + 0.22);
+            } else if (type === 'error') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.setValueAtTime(90, now + 0.08);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'victory') {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const noteOsc = audioCtx.createOscillator();
+                    const noteGain = audioCtx.createGain();
+                    noteOsc.type = 'triangle';
+                    noteOsc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    noteGain.gain.setValueAtTime(0.25, now + idx * 0.1);
+                    noteGain.gain.linearRampToValueAtTime(0.01, now + idx * 0.1 + 0.2);
+                    noteOsc.connect(noteGain);
+                    noteGain.connect(audioCtx.destination);
+                    noteOsc.start(now + idx * 0.1);
+                    noteOsc.stop(now + idx * 0.1 + 0.2);
+                });
+            }
+        }
+
+        // --- Game Engine Variables & Definitions ---
+        const TARGET_KEYS = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ' '];
+        const WIN_MONSTER_COUNT = 15;
+
+        const FINGER_MAPPING = {
+            'A': { finger: '左手小指', class: 'finger-pinky', color: '#ff007f' },
+            'S': { finger: '左手無名指', class: 'finger-ring', color: '#ff9900' },
+            'D': { finger: '左手中指', class: 'finger-middle', color: '#ffe600' },
+            'F': { finger: '左手食指', class: 'finger-index', color: '#39ff14' },
+            'G': { finger: '左手食指 (延伸)', class: 'finger-index', color: '#39ff14' },
+            'H': { finger: '右手食指 (延伸)', class: 'finger-index', color: '#00f0ff' },
+            'J': { finger: '右手食指', class: 'finger-index', color: '#00f0ff' },
+            'K': { finger: '右手中指', class: 'finger-middle', color: '#ffe600' },
+            'L': { finger: '右手無名指', class: 'finger-ring', color: '#ff9900' },
+            ' ': { finger: '雙手大拇指 (SPACE)', class: 'finger-thumb', color: '#00f0ff' }
+        };
+
+        let gameState = 'START';
+        let monstersDefeated = 0;
+        let lives = 3;
+        let combo = 0;
+        let totalKeystrokes = 0;
+        let correctKeystrokes = 0;
+        let startTime = 0;
+
+        let monsters = [];
+        let bullets = [];
+        let particles = [];
+        let shellCasings = [];
+        let floatTexts = [];
+        let roadOffset = 0;
+
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 20; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 6 + 2;
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    size: Math.random() * 5 + 3,
+                    color: color || '#ff5500',
+                    alpha: 1,
+                    life: Math.random() * 0.05 + 0.03
+                });
+            }
+        }
+
+        function createGunfireEffects(heroX, heroY) {
+            // Muzzle flash flame particles
+            for (let i = 0; i < 6; i++) {
+                particles.push({
+                    x: heroX + 48,
+                    y: heroY - 18,
+                    vx: Math.random() * 5 + 3,
+                    vy: (Math.random() - 0.5) * 4,
+                    size: Math.random() * 6 + 3,
+                    color: Math.random() > 0.5 ? '#ffe600' : '#ff5500',
+                    alpha: 1,
+                    life: 0.12
+                });
+            }
+
+            // Flying brass bullet casings
+            shellCasings.push({
+                x: heroX + 22,
+                y: heroY - 18,
+                vx: -Math.random() * 3 - 1.5,
+                vy: -Math.random() * 4 - 2.5,
+                size: 3,
+                alpha: 1
+            });
+        }
+
+        function addFloatingText(x, y, text, color) {
+            floatTexts.push({
+                x: x,
+                y: y,
+                text: text,
+                color: color || '#ffe600',
+                vy: -1.5,
+                alpha: 1.0
+            });
+        }
+
+        function spawnMonster() {
+            const key = TARGET_KEYS[Math.floor(Math.random() * TARGET_KEYS.length)];
+            const displayChar = key === ' ' ? 'SPACE' : key;
+            const monsterTypes = [
+                { type: 0, size: 34, speed: 2.2, color: '#39ff14' }, // Crawler
+                { type: 1, size: 40, speed: 1.8, color: '#ff007f' }, // Mutant Blob
+                { type: 2, size: 46, speed: 1.5, color: '#00f0ff' }, // Cyber Beast
+                { type: 3, size: 38, speed: 2.5, color: '#ffe600' }  // Fiend Runner
+            ];
+            const mData = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
+            const horizonY = canvas.height - 200;
+            const roadHeight = canvas.height - horizonY;
+            const mY = horizonY + 30 + Math.random() * (roadHeight - 80);
+
+            monsters.push({
+                key: key,
+                displayChar: displayChar,
+                x: canvas.width + 40,
+                y: mY,
+                type: mData.type,
+                size: mData.size,
+                speed: mData.speed,
+                color: mData.color,
+                pulse: Math.random() * Math.PI
+            });
+
+            updateTargetFingerHint();
+        }
+
+        function updateTargetFingerHint() {
+            // Find closest monster
+            let closestMonster = null;
+            let minX = 99999;
+
+            monsters.forEach(m => {
+                if (m.x < minX) {
+                    minX = m.x;
+                    closestMonster = m;
+                }
+            });
+
+            // Reset highlighted keys
+            document.querySelectorAll('.key-cap').forEach(el => el.classList.remove('target-key'));
+
+            const hintEl = document.getElementById('finger-hint');
+            if (closestMonster) {
+                const info = FINGER_MAPPING[closestMonster.key];
+                if (info) {
+                    hintEl.innerHTML = `<span class="${info.class} px-2 py-0.5 rounded border border-current bg-black/50">${info.finger} ➔ [ ${closestMonster.displayChar} ]</span>`;
+                    
+                    const targetKeyId = closestMonster.key === ' ' ? 'key-SPACE' : `key-${closestMonster.key}`;
+                    const targetEl = document.getElementById(targetKeyId);
+                    if (targetEl) targetEl.classList.add('target-key');
+                }
+            } else {
+                hintEl.innerHTML = `<span class="text-slate-400">前方道路暫無怪物，持續前進...</span>`;
+            }
+        }
+
+        function updateGame() {
+            if (gameState === 'PLAYING') {
+                roadOffset = (roadOffset + 5) % 60;
+
+                // Update Bullets
+                for (let i = bullets.length - 1; i >= 0; i--) {
+                    const b = bullets[i];
+                    b.x += b.speed;
+                    if (b.x > canvas.width + 50) bullets.splice(i, 1);
+                }
+
+                // Update Shell Casings
+                for (let i = shellCasings.length - 1; i >= 0; i--) {
+                    const c = shellCasings[i];
+                    c.x += c.vx;
+                    c.y += c.vy;
+                    c.vy += 0.35; // Gravity
+                    c.alpha -= 0.02;
+                    if (c.alpha <= 0) shellCasings.splice(i, 1);
+                }
+
+                // Update Monsters moving towards hero
+                const heroX = 110;
+                let monsterReached = false;
+
+                for (let i = monsters.length - 1; i >= 0; i--) {
+                    const m = monsters[i];
+                    m.x -= m.speed;
+                    m.pulse += 0.08;
+
+                    // Reached Hero on the Road!
+                    if (m.x <= heroX + 30) {
+                        monsterReached = true;
+                        createExplosion(m.x, m.y, '#ff007f');
+                        addFloatingText(heroX + 10, m.y - 10, '-1 HP', '#ff007f');
+                        playSound('error');
+                        monsters.splice(i, 1);
+                        
+                        lives--;
+                        combo = 0;
+                        updateLivesHUD();
+                        updateTargetFingerHint();
+
+                        if (lives <= 0) {
+                            endGame(false);
+                        }
+                    }
+                }
+
+                if (monsterReached) {
+                    document.getElementById('combo-text').innerText = `${combo}x`;
+                }
+
+                // Update Particles
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.alpha -= p.life;
+                    if (p.alpha <= 0) particles.splice(i, 1);
+                }
+
+                // Update Floating Texts
+                for (let i = floatTexts.length - 1; i >= 0; i--) {
+                    const ft = floatTexts[i];
+                    ft.y += ft.vy;
+                    ft.alpha -= 0.02;
+                    if (ft.alpha <= 0) floatTexts.splice(i, 1);
+                }
+
+                // Spawn Monsters
+                if (monsters.length < 3 && Math.random() < 0.025) {
+                    spawnMonster();
+                }
+
+                updateWPMAndAccuracy();
+            }
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw Horizon & Sky
+            const horizonY = canvas.height - 200;
+
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, horizonY);
+            skyGradient.addColorStop(0, '#0a0612');
+            skyGradient.addColorStop(0.5, '#260824');
+            skyGradient.addColorStop(1, '#ff5500');
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, canvas.width, horizonY);
+
+            // Distant Space Station Gantry on Horizon
+            const stationX = canvas.width - 180;
+            const stationY = 90;
+            const progressRatio = monstersDefeated / WIN_MONSTER_COUNT;
+
+            ctx.save();
+            ctx.translate(stationX, stationY);
+            ctx.scale(0.85 + progressRatio * 0.35, 0.85 + progressRatio * 0.35);
+
+            // Space Elevator & Base Tower
+            ctx.fillStyle = '#160d29';
+            ctx.fillRect(-22, 0, 44, horizonY - stationY);
+            ctx.fillStyle = '#ff5500';
+            ctx.fillRect(-65, -10, 130, 12);
+            ctx.fillStyle = '#00f0ff';
+            ctx.fillRect(-18, -32, 36, 42);
+
+            // Space Beacon Light
+            ctx.fillStyle = '#ffe600';
+            ctx.fillRect(-3, -48, 6, 16);
+
+            if (Math.sin(Date.now() * 0.01) > 0) {
+                ctx.fillStyle = '#39ff14';
+                ctx.beginPath();
+                ctx.arc(0, -50, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+
+            // Distant City Skylines
+            ctx.fillStyle = '#100a1d';
+            for (let x = 0; x < canvas.width; x += 45) {
+                const h = 50 + (Math.sin(x * 12.3) * 35 + 20);
+                ctx.fillRect(x, horizonY - h, 38, h);
+            }
+
+            // 2. Draw Road Highway
+            ctx.fillStyle = '#16121f';
+            ctx.fillRect(0, horizonY, canvas.width, canvas.height - horizonY);
+
+            // Curb Guardrails
+            const curbSize = 30;
+            for (let x = -roadOffset; x < canvas.width + curbSize; x += curbSize) {
+                ctx.fillStyle = (Math.floor((x + roadOffset) / curbSize) % 2 === 0) ? '#ff5500' : '#ffffff';
+                ctx.fillRect(x, horizonY, curbSize, 6);
+            }
+
+            // Moving Yellow Center Lane Lines
+            ctx.fillStyle = '#ffe600';
+            const laneY = horizonY + 70;
+            for (let x = -roadOffset * 1.5; x < canvas.width; x += 70) {
+                ctx.fillRect(x, laneY, 38, 6);
+            }
+
+            // Burning Car Debris on Roadside
+            ctx.fillStyle = '#ff007f';
+            ctx.fillRect(260, horizonY + 20, 28, 12);
+            ctx.fillStyle = '#ff5500';
+            ctx.fillRect(640, horizonY + 110, 36, 14);
+
+            if (Math.random() < 0.4) {
+                particles.push({
+                    x: 272 + Math.random() * 10,
+                    y: horizonY + 18,
+                    vx: (Math.random() - 0.5) * 1,
+                    vy: -Math.random() * 2 - 1,
+                    size: Math.random() * 4 + 2,
+                    color: '#ff5500',
+                    alpha: 1,
+                    life: 0.08
+                });
+            }
+
+            // 3. Draw Running Hero
+            const heroX = 110;
+            const heroY = canvas.height - 120;
+            const runFrame = Math.floor(Date.now() / 100) % 4;
+
+            ctx.save();
+            ctx.translate(heroX, heroY);
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.beginPath();
+            ctx.ellipse(0, 16, 22, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Legs Animation
+            ctx.fillStyle = '#00f0ff';
+            if (runFrame === 0) {
+                ctx.fillRect(-12, 0, 7, 16); ctx.fillRect(5, 0, 7, 13);
+            } else if (runFrame === 1) {
+                ctx.fillRect(-7, 0, 7, 13); ctx.fillRect(9, -2, 7, 11);
+            } else if (runFrame === 2) {
+                ctx.fillRect(3, 0, 7, 16); ctx.fillRect(-12, 0, 7, 13);
+            } else {
+                ctx.fillRect(9, 0, 7, 13); ctx.fillRect(-7, -2, 7, 11);
+            }
+
+            // Body Armor & Visor Helmet
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-14, -24, 28, 24);
+            ctx.fillStyle = '#ff007f';
+            ctx.fillRect(-10, -22, 20, 20);
+
+            ctx.fillStyle = '#ffe600';
+            ctx.fillRect(-12, -38, 24, 15);
+            ctx.fillStyle = '#00f0ff';
+            ctx.fillRect(2, -34, 12, 6);
+
+            // Machine Gun Body
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(-4, -20, 42, 9);
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(28, -18, 22, 5);
+            ctx.fillStyle = '#ff5500';
+            ctx.fillRect(12, -11, 10, 12);
+
+            ctx.restore();
+
+            // 4. Draw Casings & Bullets
+            shellCasings.forEach(c => {
+                ctx.fillStyle = '#ffe600';
+                ctx.globalAlpha = Math.max(0, c.alpha);
+                ctx.fillRect(c.x, c.y, c.size + 1, c.size);
+                ctx.globalAlpha = 1.0;
+            });
+
+            bullets.forEach(b => {
+                ctx.fillStyle = '#ffe600';
+                ctx.shadowColor = '#ff5500';
+                ctx.shadowBlur = 8;
+                ctx.fillRect(b.x, b.y - 2, 24, 4);
+                ctx.shadowBlur = 0;
+            });
+
+            // 5. Draw Monsters
+            monsters.forEach(m => {
+                ctx.save();
+                ctx.translate(m.x, m.y);
+
+                ctx.fillStyle = m.color;
+                ctx.shadowColor = m.color;
+                ctx.shadowBlur = 10;
+
+                const scale = 1 + Math.sin(m.pulse) * 0.08;
+                ctx.scale(scale, scale);
+
+                if (m.type === 0) {
+                    ctx.fillRect(-m.size/2, -m.size/2, m.size, m.size/1.3);
+                    ctx.fillRect(-m.size/1.5, m.size/4, 6, 10);
+                    ctx.fillRect(m.size/3, m.size/4, 6, 10);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(-6, -6, 12, 6);
+                } else if (m.type === 1) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, m.size/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#0a0612';
+                    ctx.fillRect(-5, -5, 10, 10);
+                } else if (m.type === 2) {
+                    ctx.fillRect(-m.size/2, -m.size/2, m.size, m.size);
+                    ctx.fillStyle = '#ffe600';
+                    ctx.fillRect(-m.size/2 + 4, -m.size/3, 8, 8);
+                } else {
+                    ctx.fillRect(-m.size/2, -m.size/1.8, m.size, m.size/1.2);
+                    ctx.fillStyle = '#ff007f';
+                    ctx.fillRect(-6, -4, 4, 4);
+                    ctx.fillRect(2, -4, 4, 4);
+                }
+
+                ctx.shadowBlur = 0;
+
+                // Letter Badge Tag Above Monster
+                const labelWidth = m.key === ' ' ? 74 : 36;
+                ctx.fillStyle = '#0a0612';
+                ctx.fillRect(-labelWidth/2, -m.size/2 - 28, labelWidth, 22);
+                ctx.strokeStyle = '#00f0ff';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(-labelWidth/2, -m.size/2 - 28, labelWidth, 22);
+
+                ctx.font = 'bold 11px "Press Start 2P"';
+                ctx.fillStyle = '#ffe600';
+                ctx.textAlign = 'center';
+                ctx.fillText(m.displayChar, 0, -m.size/2 - 13);
+
+                ctx.restore();
+            });
+
+            // 6. Draw Explosion Particles
+            particles.forEach(p => {
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+                ctx.globalAlpha = 1.0;
+            });
+
+            // 7. Floating Text Effects
+            floatTexts.forEach(ft => {
+                ctx.globalAlpha = Math.max(0, ft.alpha);
+                ctx.font = 'bold 14px "Press Start 2P"';
+                ctx.fillStyle = ft.color;
+                ctx.fillText(ft.text, ft.x, ft.y);
+                ctx.globalAlpha = 1.0;
+            });
+
+            requestAnimationFrame(() => {
+                updateGame();
+                drawGame();
+            });
+        }
+
+        function handleKeyPress(key) {
+            if (gameState !== 'PLAYING') return;
+
+            const pressedKey = key.toUpperCase();
+            totalKeystrokes++;
+
+            // Highlight Keycap UI
+            const keyElId = pressedKey === ' ' ? 'key-SPACE' : `key-${pressedKey}`;
+            const keyEl = document.getElementById(keyElId);
+            if (keyEl) {
+                keyEl.classList.add('active-key');
+                setTimeout(() => keyEl.classList.remove('active-key'), 120);
+            }
+
+            // Find matching monster closest to Hero
+            let hitIndex = -1;
+            let closestX = 99999;
+
+            monsters.forEach((m, idx) => {
+                if (m.key.toUpperCase() === pressedKey) {
+                    if (m.x < closestX) {
+                        closestX = m.x;
+                        hitIndex = idx;
+                    }
+                }
+            });
+
+            if (hitIndex !== -1) {
+                // Successful Hit!
+                correctKeystrokes++;
+                combo++;
+                const targetMonster = monsters[hitIndex];
+
+                const heroX = 110;
+                const heroY = canvas.height - 120;
+
+                // Spawn Machine Gun Bullet Tracer
+                bullets.push({
+                    x: heroX + 42,
+                    y: heroY - 16,
+                    speed: 30
+                });
+
+                createGunfireEffects(heroX, heroY);
+                playSound('machinegun');
+
+                setTimeout(() => {
+                    createExplosion(targetMonster.x, targetMonster.y, targetMonster.color);
+                    addFloatingText(targetMonster.x, targetMonster.y - 15, `+100`, '#39ff14');
+                    playSound('explosion');
+                    monsters.splice(hitIndex, 1);
+                    
+                    monstersDefeated++;
+                    updateProgressHUD();
+                    updateTargetFingerHint();
+
+                    if (monstersDefeated >= WIN_MONSTER_COUNT) {
+                        endGame(true);
+                    }
+                }, 70);
+
+            } else {
+                // Misfire / Error
+                combo = 0;
+                playSound('error');
+            }
+
+            document.getElementById('combo-text').innerText = `${combo}x`;
+        }
+
+        function updateProgressHUD() {
+            document.getElementById('monster-count').innerText = monstersDefeated;
+            const pct = Math.min(100, (monstersDefeated / WIN_MONSTER_COUNT) * 100);
+            document.getElementById('progress-fill').style.width = `${pct}%`;
+            document.getElementById('hero-progress-icon').style.left = `${pct}%`;
+        }
+
+        function updateLivesHUD() {
+            const container = document.getElementById('lives-container');
+            container.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < lives) {
+                    container.innerHTML += '<i class="fa-solid fa-heart text-neon-pink"></i>';
+                } else {
+                    container.innerHTML += '<i class="fa-solid fa-heart text-slate-700"></i>';
+                }
+            }
+        }
+
+        function updateWPMAndAccuracy() {
+            const elapsedMinutes = (Date.now() - startTime) / 60000;
+            const wpm = elapsedMinutes > 0 ? Math.round((correctKeystrokes / 5) / elapsedMinutes) : 0;
+            const accuracy = totalKeystrokes > 0 ? Math.round((correctKeystrokes / totalKeystrokes) * 100) : 100;
+
+            document.getElementById('wpm-text').innerText = wpm;
+            document.getElementById('acc-text').innerText = `${accuracy}%`;
+        }
+
+        function startGame() {
+            gameState = 'PLAYING';
+            monstersDefeated = 0;
+            lives = 3;
+            combo = 0;
+            totalKeystrokes = 0;
+            correctKeystrokes = 0;
+            startTime = Date.now();
+            monsters = [];
+            bullets = [];
+            particles = [];
+            shellCasings = [];
+            floatTexts = [];
+
+            updateLivesHUD();
+            updateProgressHUD();
+            document.getElementById('combo-text').innerText = '0x';
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.remove('flex');
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('gameover-screen').classList.remove('flex');
+
+            document.getElementById('game-hud').classList.remove('hidden');
+
+            spawnMonster();
+            setTimeout(spawnMonster, 700);
+        }
+
+        function endGame(isVictory) {
+            gameState = isVictory ? 'VICTORY' : 'GAMEOVER';
+            document.getElementById('game-hud').classList.add('hidden');
+
+            const elapsedMinutes = (Date.now() - startTime) / 60000;
+            const finalWPM = elapsedMinutes > 0 ? Math.round((correctKeystrokes / 5) / elapsedMinutes) : 0;
+            const finalAcc = totalKeystrokes > 0 ? Math.round((correctKeystrokes / totalKeystrokes) * 100) : 100;
+
+            if (isVictory) {
+                playSound('victory');
+                document.getElementById('vic-wpm').innerText = finalWPM;
+                document.getElementById('vic-acc').innerText = `${finalAcc}%`;
+                document.getElementById('victory-screen').classList.remove('hidden');
+                document.getElementById('victory-screen').classList.add('flex');
+            } else {
+                document.getElementById('gameover-screen').classList.remove('hidden');
+                document.getElementById('gameover-screen').classList.add('flex');
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Key listeners
+        window.addEventListener('keydown', (e) => {
+            if (e.key === ' ' || TARGET_KEYS.includes(e.key.toUpperCase())) {
+                if (e.key === ' ') e.preventDefault();
+                handleKeyPress(e.key);
+            }
+        });
+
+        // Touch button keyboard controls
+        document.querySelectorAll('#keyboard-hud button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const k = btn.getAttribute('data-key');
+                if (k) handleKeyPress(k);
+            });
+        });
+
+        // Control Buttons
+        document.getElementById('launch-btn').addEventListener('click', () => {
+            playSound('machinegun');
+            startGame();
+        });
+
+        document.getElementById('replay-btn').addEventListener('click', () => {
+            playSound('machinegun');
+            startGame();
+        });
+
+        document.getElementById('retry-btn').addEventListener('click', () => {
+            playSound('machinegun');
+            startGame();
+        });
+
+        // Sound & CRT Toggles
+        document.getElementById('sound-btn').addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            icon.className = soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+            if (soundEnabled) playSound('machinegun');
+        });
+
+        document.getElementById('crt-btn').addEventListener('click', () => {
+            const crt = document.getElementById('crt-layer');
+            crt.style.display = crt.style.display === 'none' ? 'block' : 'none';
+        });
+
+        window.onload = function() {
+            resizeCanvas();
+            drawGame();
+        };
+    </script>
+</body>
+</html>
