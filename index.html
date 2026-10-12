@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星際之鍵 | AstroKeys - 像素風英打遊戲</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Pixel Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'space-dark': '#0b091a',
+                        'space-card': '#161233',
+                        'neon-cyan': '#00f0ff',
+                        'neon-pink': '#ff007f',
+                        'alien-green': '#39ff14',
+                        'star-gold': '#ffe600',
+                        'pixel-purple': '#8b5cf6'
+                    },
+                    fontFamily: {
+                        'pixel': ['"Press Start 2P"', '"DotGothic16"', 'cursive'],
+                        'pixel-zh': ['"DotGothic16"', '"Press Start 2P"', 'sans-serif'],
+                        'vt': ['VT323', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0b091a;
+            color: #ffffff;
+            font-family: 'DotGothic16', sans-serif;
+            overflow-x: hidden;
+            image-rendering: pixelated;
+            user-select: none;
+        }
+
+        /* Retro CRT Scanlines Effect */
+        .crt-overlay {
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.25) 50%
+            ), linear-gradient(
+                90deg,
+                rgba(255, 0, 0, 0.03),
+                rgba(0, 255, 0, 0.01),
+                rgba(0, 0, 255, 0.03)
+            );
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        .crt-flicker {
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            50% { opacity: 1; }
+            100% { opacity: 0.98; }
+        }
+
+        /* Custom Pixel Art Buttons */
+        .pixel-btn {
+            position: relative;
+            display: inline-block;
+            padding: 16px 32px;
+            font-family: 'Press Start 2P', 'DotGothic16', sans-serif;
+            text-transform: uppercase;
+            color: #fff;
+            background-color: #ff007f;
+            box-shadow: 
+                inset -6px -6px 0px 0px #99004d,
+                inset 6px 6px 0px 0px #ff66b2,
+                0px 8px 0px 0px #000,
+                0px 12px 15px rgba(0,0,0,0.5);
+            border: 4px solid #000;
+            transition: all 0.1s ease;
+            cursor: pointer;
+        }
+
+        .pixel-btn:hover {
+            background-color: #ff3399;
+            transform: translateY(-2px);
+            box-shadow: 
+                inset -6px -6px 0px 0px #b30059,
+                inset 6px 6px 0px 0px #ff99cc,
+                0px 10px 0px 0px #000,
+                0px 15px 20px rgba(255,0,127,0.4);
+        }
+
+        .pixel-btn:active {
+            transform: translateY(6px);
+            box-shadow: 
+                inset -6px -6px 0px 0px #99004d,
+                inset 6px 6px 0px 0px #ff66b2,
+                0px 2px 0px 0px #000,
+                0px 4px 6px rgba(0,0,0,0.5);
+        }
+
+        /* Secondary Pixel Button */
+        .pixel-btn-secondary {
+            background-color: #00f0ff;
+            color: #0b091a;
+            box-shadow: 
+                inset -6px -6px 0px 0px #008899,
+                inset 6px 6px 0px 0px #80f8ff,
+                0px 6px 0px 0px #000;
+            border: 4px solid #000;
+        }
+
+        .pixel-btn-secondary:hover {
+            background-color: #33f3ff;
+            box-shadow: 
+                inset -6px -6px 0px 0px #00a0b3,
+                inset 6px 6px 0px 0px #b3faff,
+                0px 8px 0px 0px #000,
+                0px 10px 15px rgba(0,240,255,0.4);
+        }
+
+        /* Glow Text Effect */
+        .glow-title {
+            text-shadow: 
+                4px 4px 0px #ff007f,
+                -4px -4px 0px #00f0ff,
+                0 0 20px rgba(255, 0, 127, 0.8),
+                0 0 40px rgba(0, 240, 255, 0.8);
+        }
+
+        .pixel-box {
+            background: #161233;
+            border: 4px solid #00f0ff;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3), inset 0 0 15px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .pixel-box::before {
+            content: '';
+            position: absolute;
+            top: -8px; left: -8px; right: -8px; bottom: -8px;
+            border: 2px solid #0b091a;
+            pointer-events: none;
+        }
+
+        /* Float Animations */
+        @keyframes float-slow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(2deg); }
+        }
+
+        @keyframes float-alien {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-10px) scale(1.05); }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(57, 255, 20, 0.8)); }
+            50% { filter: drop-shadow(0 0 22px rgba(57, 255, 20, 1)); }
+        }
+
+        .animate-float-slow {
+            animation: float-slow 5s ease-in-out infinite;
+        }
+
+        .animate-alien {
+            animation: float-alien 3s ease-in-out infinite;
+        }
+
+        .animate-pulse-glow {
+            animation: pulse-glow 2s infinite;
+        }
+
+        /* Pixel Keyboard Key Styling */
+        .key-cap {
+            background: #2a2456;
+            border: 3px solid #00f0ff;
+            box-shadow: 0 5px 0 #000;
+            border-radius: 4px;
+            font-family: 'Press Start 2P', monospace;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffe600;
+            text-shadow: 2px 2px 0 #000;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between relative overflow-x-hidden selection:bg-neon-pink selection:text-white">
+
+    <canvas id="space-canvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+
+    <!-- CRT Overlay Layer -->
+    <div id="crt-layer" class="crt-overlay crt-flicker fixed inset-0 z-50 pointer-events-none"></div>
+
+    <!-- Header / Navigation Bar -->
+    <header class="relative z-10 w-full px-6 py-4 flex justify-between items-center max-w-7xl mx-auto">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-neon-pink flex items-center justify-center border-2 border-white shadow-[3px_3px_0_#000]">
+                <i class="fa-solid font-pixel text-xl text-white">⌨️</i>
+            </div>
+            <span class="font-pixel text-lg md:text-xl text-neon-cyan tracking-wider drop-shadow-[2px_2px_0_#000]">ASTROKEYS</span>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <!-- CRT Toggle -->
+            <button id="crt-toggle" class="bg-space-card hover:bg-purple-900 text-xs px-3 py-2 border-2 border-neon-cyan text-neon-cyan flex items-center gap-2 transition cursor-pointer">
+                <i class="fa-solid fa-tv"></i>
+                <span class="hidden sm:inline font-pixel">CRT: <span id="crt-status">ON</span></span>
+            </button>
+
+            <!-- Sound Toggle Button -->
+            <button id="sound-btn" class="bg-space-card hover:bg-purple-900 text-xs px-3 py-2 border-2 border-star-gold text-star-gold flex items-center gap-2 transition cursor-pointer">
+                <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+                <span id="sound-text" class="hidden sm:inline font-pixel">SOUND: ON</span>
+            </button>
+
+            <!-- Language Badge -->
+            <div class="bg-neon-pink text-white text-xs font-pixel px-3 py-2 border-2 border-black shadow-[2px_2px_0_#000]">
+                v1.0 BETA
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN HERO SECTION -->
+    <main class="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-8 text-center max-w-6xl mx-auto w-full">
+
+        <!-- Top Status Bar Banner -->
+        <div class="mb-4 inline-flex items-center gap-2 bg-space-card/80 border-2 border-alien-green px-4 py-2 rounded-none backdrop-blur animate-pulse">
+            <span class="w-3 h-3 bg-alien-green inline-block shadow-[0_0_8px_#39ff14]"></span>
+            <span class="font-pixel-zh text-alien-green text-sm sm:text-base tracking-widest">警告：外星黑客軍團正在入侵地球神經網路！</span>
+        </div>
+
+        <!-- MAIN TITLE -->
+        <div class="my-4 relative">
+            <h1 class="text-5xl sm:text-7xl md:text-8xl font-black font-pixel-zh text-white glow-title tracking-wider leading-tight">
+                星際之鍵
+            </h1>
+            <p class="font-pixel text-xs sm:text-base text-neon-cyan tracking-widest mt-3 drop-shadow-[2px_2px_0_#000]">
+                ASTROKEYS: TYPE TO DEFEND THE GALAXY
+            </p>
+        </div>
+
+        <!-- MAIN PIXEL ART VISUAL STAGE -->
+        <div class="w-full my-6 relative max-w-4xl h-[320px] sm:h-[380px] bg-space-dark/60 border-4 border-purple-600/60 rounded-none overflow-hidden shadow-[0_0_30px_rgba(139,92,246,0.3)] flex items-center justify-center">
+            
+            <!-- Grid Lines in Background -->
+            <div class="absolute inset-0 bg-[linear-gradient(to_right,#1f1a42_1px,transparent_1px),linear-gradient(to_bottom,#1f1a42_1px,transparent_1px)] bg-[size:24px_24px] opacity-40"></div>
+
+            <!-- Left: Floating Alien Monsters -->
+            <div class="absolute left-4 sm:left-12 top-6 flex flex-col items-center gap-4 animate-alien z-20">
+                <!-- SVG Pixel Alien 1 -->
+                <div class="relative group cursor-pointer" onclick="playAlienSound()">
+                    <svg class="w-20 h-20 sm:w-28 sm:h-28 drop-shadow-[0_0_12px_rgba(57,255,20,0.8)]" viewBox="0 0 24 24" fill="none">
+                        <!-- Pixel Alien Graphic -->
+                        <path d="M4 4h16v2H4zM2 6h20v2H2zM2 8h20v6H2zM4 14h4v2H4zM16 14h4v2H16zM2 16h4v4H2zM18 16h4v4H18z" fill="#39ff14"/>
+                        <!-- Eyes -->
+                        <rect x="6" y="9" width="3" height="3" fill="#000"/>
+                        <rect x="15" y="9" width="3" height="3" fill="#000"/>
+                        <rect x="7" y="10" width="1" height="1" fill="#fff"/>
+                        <rect x="16" y="10" width="1" height="1" fill="#fff"/>
+                        <!-- Mouth/Teeth -->
+                        <path d="M8 12h8v1H8z" fill="#ff007f"/>
+                    </svg>
+                    <!-- Key Bubble on Monster -->
+                    <div class="absolute -top-3 -right-2 key-cap px-2 py-1 text-xs animate-bounce">
+                        [A]
+                    </div>
+                </div>
+
+                <!-- SVG Pixel Alien 2 (Smaller Boss) -->
+                <div class="hidden sm:block relative transform -translate-x-6">
+                    <svg class="w-16 h-16 drop-shadow-[0_0_10px_rgba(255,0,127,0.8)]" viewBox="0 0 20 20" fill="none">
+                        <path d="M3 3h14v10H3z" fill="#ff007f"/>
+                        <path d="M1 5h18v6H1z" fill="#ff007f"/>
+                        <rect x="5" y="6" width="3" height="3" fill="#ffe600"/>
+                        <rect x="12" y="6" width="3" height="3" fill="#ffe600"/>
+                        <path d="M5 13h2v4H5zM13 13h2v4H13z" fill="#ff007f"/>
+                    </svg>
+                    <div class="absolute -top-2 -right-2 key-cap px-1.5 py-0.5 text-[10px]">
+                        [K]
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Beam / Defense Laser Effect -->
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <div class="w-full h-1 bg-gradient-to-r from-alien-green via-neon-cyan to-neon-pink opacity-50 animate-pulse"></div>
+            </div>
+
+            <!-- Center Pixel Planet Earth -->
+            <div class="relative animate-float-slow z-20 flex flex-col items-center">
+                <svg class="w-36 h-36 sm:w-48 sm:h-48 drop-shadow-[0_0_20px_rgba(0,240,255,0.6)]" viewBox="0 0 32 32" fill="none">
+                    <!-- Space Planet Body -->
+                    <circle cx="16" cy="16" r="14" fill="#0b3d91"/>
+                    <!-- Oceans / Continents pixel art -->
+                    <path d="M8 8h6v4H8zM16 6h8v6h-8zM6 14h10v6H6zM18 16h8v8h-8zM10 22h8v4h-8z" fill="#2e8b57"/>
+                    <path d="M10 10h3v2h-3zM18 8h4v3h-4zM8 16h6v3H8z" fill="#3cb371"/>
+                    <!-- Ice Cap -->
+                    <path d="M10 2h12v2H10z" fill="#ffffff"/>
+                    <path d="M12 28h8v2h-8z" fill="#ffffff"/>
+                    <!-- Atmosphere Glow Ring -->
+                    <circle cx="16" cy="16" r="15" stroke="#00f0ff" stroke-width="0.8" stroke-dasharray="3 2" class="animate-spin" style="animation-duration: 20s;"/>
+                </svg>
+                <span class="font-pixel text-[10px] sm:text-xs text-neon-cyan bg-space-dark/80 px-2 py-1 border border-neon-cyan mt-1">
+                    TARGET: EARTH
+                </span>
+            </div>
+
+            <!-- Right: Survivors / Astronauts Base -->
+            <div class="absolute right-4 sm:right-12 bottom-6 flex flex-col items-center z-20">
+                <div class="relative flex items-end gap-2">
+                    <!-- Astronaut 1 -->
+                    <div class="flex flex-col items-center group cursor-pointer" onclick="playLaserSound()">
+                        <div class="absolute -top-7 text-[10px] font-pixel text-star-gold bg-black/80 px-2 py-0.5 border border-star-gold rounded-none">
+                            FIRE!
+                        </div>
+                        <svg class="w-16 h-20 sm:w-20 sm:h-24 drop-shadow-[0_0_10px_rgba(255,230,0,0.5)]" viewBox="0 0 20 24" fill="none">
+                            <!-- Helmet -->
+                            <rect x="5" y="2" width="10" height="8" fill="#ffffff"/>
+                            <rect x="6" y="4" width="8" height="4" fill="#00f0ff"/>
+                            <!-- Body Suit -->
+                            <rect x="4" y="10" width="12" height="9" fill="#ffffff"/>
+                            <rect x="7" y="11" width="6" height="4" fill="#ff007f"/>
+                            <!-- Legs -->
+                            <rect x="5" y="19" width="4" height="4" fill="#888888"/>
+                            <rect x="11" y="19" width="4" height="4" fill="#888888"/>
+                            <!-- Laser Gun -->
+                            <rect x="0" y="12" width="6" height="3" fill="#ffe600"/>
+                            <rect x="0" y="13" width="2" height="5" fill="#333333"/>
+                        </svg>
+                    </div>
+
+                    <!-- Astronaut 2 (Survivor Commander) -->
+                    <div class="hidden sm:block">
+                        <svg class="w-14 h-18 drop-shadow-[0_0_10px_rgba(0,240,255,0.5)]" viewBox="0 0 20 24" fill="none">
+                            <rect x="5" y="2" width="10" height="8" fill="#e0e0e0"/>
+                            <rect x="6" y="4" width="8" height="4" fill="#ffe600"/>
+                            <rect x="4" y="10" width="12" height="9" fill="#00f0ff"/>
+                            <rect x="5" y="19" width="4" height="4" fill="#008899"/>
+                            <rect x="11" y="19" width="4" height="4" fill="#008899"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Defense Shield Generator Indicator -->
+                <div class="mt-1 flex items-center gap-1 font-pixel text-[10px] text-star-gold">
+                    <i class="fa-solid fa-shield-halved text-neon-cyan"></i>
+                    <span>基地防禦率 100%</span>
+                </div>
+            </div>
+
+            <!-- Bottom Subtitle Overlay -->
+            <div class="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
+                <span class="font-pixel-zh text-xs text-slate-300 bg-black/70 px-3 py-1 border-t border-purple-500">
+                    按鍵即武器：精準擊打對應英文字母，摧毀入侵敵人！
+                </span>
+            </div>
+        </div>
+
+        <!-- CALL TO ACTION BUTTONS -->
+        <div class="my-6 flex flex-col sm:flex-row items-center justify-center gap-6 w-full max-w-md">
+            <!-- Start Game Button -->
+            <button id="start-btn" class="pixel-btn w-full py-5 text-lg sm:text-xl font-bold tracking-widest text-white flex items-center justify-center gap-3 group">
+                <i class="fa-solid fa-play text-star-gold group-hover:scale-125 transition-transform"></i>
+                <span>開始遊戲</span>
+                <i class="fa-solid fa-play text-star-gold group-hover:scale-125 transition-transform"></i>
+            </button>
+        </div>
+
+        <!-- Interactive Notification Toast -->
+        <div id="toast-msg" class="opacity-0 transition-opacity duration-300 font-pixel-zh text-sm text-star-gold bg-space-card/90 border border-star-gold px-4 py-2 mt-2">
+            🚀 系統就緒！準備開始關卡一...
+        </div>
+
+        <!-- STAGE PROGRESSION PREVIEW (5 LEVELS) -->
+        <section class="w-full my-10 text-left">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-4 h-4 bg-neon-cyan"></div>
+                <h2 class="font-pixel-zh text-xl sm:text-2xl text-neon-cyan tracking-wider">五大航道關卡指法藍圖</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <!-- Stage 1 -->
+                <div class="pixel-box p-4 flex flex-col justify-between hover:border-star-gold transition cursor-pointer group">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-pixel text-xs text-neon-pink">STAGE 01</span>
+                            <i class="fa-solid fa-check-circle text-alien-green"></i>
+                        </div>
+                        <h3 class="font-pixel-zh text-lg text-white group-hover:text-star-gold mb-2">基座啟動</h3>
+                        <p class="text-xs text-slate-300 mb-3">Home Row 基準行盲打解鎖</p>
+                    </div>
+                    <div class="bg-black/50 p-2 border border-slate-700">
+                        <span class="text-[10px] font-pixel text-neon-cyan block mb-1">KEYSET:</span>
+                        <div class="flex flex-wrap gap-1">
+                            <span class="key-cap text-[10px] px-1">A</span>
+                            <span class="key-cap text-[10px] px-1">S</span>
+                            <span class="key-cap text-[10px] px-1">D</span>
+                            <span class="key-cap text-[10px] px-1">F</span>
+                            <span class="key-cap text-[10px] px-1">J</span>
+                            <span class="key-cap text-[10px] px-1">K</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage 2 -->
+                <div class="pixel-box p-4 flex flex-col justify-between hover:border-star-gold transition cursor-pointer group">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-pixel text-xs text-neon-pink">STAGE 02</span>
+                            <i class="fa-solid fa-lock-open text-slate-500"></i>
+                        </div>
+                        <h3 class="font-pixel-zh text-lg text-white group-hover:text-star-gold mb-2">航向上方</h3>
+                        <p class="text-xs text-slate-300 mb-3">Upper Row 上排字母躍升</p>
+                    </div>
+                    <div class="bg-black/50 p-2 border border-slate-700">
+                        <span class="text-[10px] font-pixel text-neon-cyan block mb-1">KEYSET:</span>
+                        <div class="flex flex-wrap gap-1">
+                            <span class="key-cap text-[10px] px-1">Q</span>
+                            <span class="key-cap text-[10px] px-1">W</span>
+                            <span class="key-cap text-[10px] px-1">E</span>
+                            <span class="key-cap text-[10px] px-1">R</span>
+                            <span class="key-cap text-[10px] px-1">T</span>
+                            <span class="key-cap text-[10px] px-1">Y</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage 3 -->
+                <div class="pixel-box p-4 flex flex-col justify-between hover:border-star-gold transition cursor-pointer group">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-pixel text-xs text-neon-pink">STAGE 03</span>
+                            <i class="fa-solid fa-lock text-slate-600"></i>
+                        </div>
+                        <h3 class="font-pixel-zh text-lg text-white group-hover:text-star-gold mb-2">向下探索</h3>
+                        <p class="text-xs text-slate-300 mb-3">Bottom Row 下排字母俯衝</p>
+                    </div>
+                    <div class="bg-black/50 p-2 border border-slate-700">
+                        <span class="text-[10px] font-pixel text-neon-cyan block mb-1">KEYSET:</span>
+                        <div class="flex flex-wrap gap-1">
+                            <span class="key-cap text-[10px] px-1">Z</span>
+                            <span class="key-cap text-[10px] px-1">X</span>
+                            <span class="key-cap text-[10px] px-1">C</span>
+                            <span class="key-cap text-[10px] px-1">V</span>
+                            <span class="key-cap text-[10px] px-1">B</span>
+                            <span class="key-cap text-[10px] px-1">N</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage 4 -->
+                <div class="pixel-box p-4 flex flex-col justify-between hover:border-star-gold transition cursor-pointer group">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-pixel text-xs text-neon-pink">STAGE 04</span>
+                            <i class="fa-solid fa-lock text-slate-600"></i>
+                        </div>
+                        <h3 class="font-pixel-zh text-lg text-white group-hover:text-star-gold mb-2">星際符號</h3>
+                        <p class="text-xs text-slate-300 mb-3">Shift 大小寫與標點通訊</p>
+                    </div>
+                    <div class="bg-black/50 p-2 border border-slate-700">
+                        <span class="text-[10px] font-pixel text-neon-cyan block mb-1">KEYSET:</span>
+                        <div class="flex flex-wrap gap-1">
+                            <span class="key-cap text-[10px] px-1">Shift</span>
+                            <span class="key-cap text-[10px] px-1">,</span>
+                            <span class="key-cap text-[10px] px-1">.</span>
+                            <span class="key-cap text-[10px] px-1">!</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage 5 -->
+                <div class="pixel-box p-4 flex flex-col justify-between hover:border-star-gold transition cursor-pointer group">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-pixel text-xs text-neon-pink">STAGE 05</span>
+                            <i class="fa-solid fa-crown text-star-gold"></i>
+                        </div>
+                        <h3 class="font-pixel-zh text-lg text-white group-hover:text-star-gold mb-2">終極決戰</h3>
+                        <p class="text-xs text-slate-300 mb-3">數字與全鍵盤綜合指令</p>
+                    </div>
+                    <div class="bg-black/50 p-2 border border-slate-700">
+                        <span class="text-[10px] font-pixel text-neon-cyan block mb-1">KEYSET:</span>
+                        <div class="flex flex-wrap gap-1">
+                            <span class="key-cap text-[10px] px-1">0-9</span>
+                            <span class="key-cap text-[10px] px-1">#</span>
+                            <span class="key-cap text-[10px] px-1">@</span>
+                            <span class="key-cap text-[10px] px-1">%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- HIGHLIGHT FEATURES / LEADERBOARD TEASER -->
+        <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-6 my-4 text-left">
+            <!-- Feature Box -->
+            <div class="pixel-box p-6 flex flex-col justify-between">
+                <div>
+                    <h3 class="font-pixel-zh text-lg text-star-gold mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-gamepad"></i> 遊戲特色系統
+                    </h3>
+                    <ul class="space-y-2 text-sm text-slate-300 font-pixel-zh">
+                        <li class="flex items-center gap-2">
+                            <span class="text-neon-cyan">▶</span> 8-Bit 像素懷旧畫風與動態星空背景
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-neon-cyan">▶</span> 即時 WPM（每分鐘字數）與正確率精確統計
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-neon-cyan">▶</span> 虛擬螢幕鍵盤提示指法與手指顏色分工
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-neon-cyan">▶</span> 內置 Web Audio 復古音效與電子音效反饋
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Hall of Fame / High Scores Teaser -->
+            <div class="pixel-box p-6">
+                <h3 class="font-pixel-zh text-lg text-neon-pink mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-trophy"></i> 銀河打字英雄榜 (TOP TYPISTS)
+                </h3>
+                <div class="space-y-2 font-vt text-lg">
+                    <div class="flex justify-between items-center bg-black/40 px-3 py-1 border-l-2 border-star-gold">
+                        <span class="text-star-gold">1. CADET_NOAH</span>
+                        <span class="text-neon-cyan">85 WPM / 99% ACC</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-black/40 px-3 py-1 border-l-2 border-slate-400">
+                        <span class="text-slate-300">2. STAR_TYPER</span>
+                        <span class="text-neon-cyan">72 WPM / 97% ACC</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-black/40 px-3 py-1 border-l-2 border-amber-700">
+                        <span class="text-amber-600">3. ALIEN_HUNTER</span>
+                        <span class="text-neon-cyan">68 WPM / 95% ACC</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="relative z-10 w-full border-t-2 border-purple-900 bg-space-dark/90 py-4 px-6 text-center text-xs font-pixel text-slate-400">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+            <p>© 2026 ASTROKEYS (星際之鍵) - Retro Space Typing Game</p>
+            <p class="text-neon-pink">PRESS ANY KEY TO START PILOTING</p>
+        </div>
+    </footer>
+
+    <!-- AUDIO & CANVAS SCRIPT IMPLEMENTATION -->
+    <script>
+        // --- Web Audio API Synth Sound Generator ---
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // Play 8-Bit Laser Sound
+        function playLaserSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.15);
+            
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        // Play Alien Monster Sound
+        function playAlienSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(300, audioCtx.currentTime + 0.05);
+            osc.frequency.setValueAtTime(200, audioCtx.currentTime + 0.1);
+            
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.18);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.18);
+        }
+
+        // Play Button Click Beep Sound
+        function playBeepSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+            osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08); // E5
+            
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        // --- Space Background Canvas Animation ---
+        const canvas = document.getElementById('space-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let stars = [];
+        let comets = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initStars();
+        }
+
+        function initStars() {
+            stars = [];
+            const count = Math.floor((canvas.width * canvas.height) / 3000);
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() > 0.8 ? 2 : 1,
+                    color: Math.random() > 0.5 ? '#ffffff' : (Math.random() > 0.5 ? '#00f0ff' : '#ff007f'),
+                    alpha: Math.random(),
+                    speed: 0.01 + Math.random() * 0.02
+                });
+            }
+        }
+
+        function addComet() {
+            if (Math.random() < 0.015 && comets.length < 3) {
+                comets.push({
+                    x: Math.random() * canvas.width,
+                    y: 0,
+                    length: 40 + Math.random() * 60,
+                    speed: 4 + Math.random() * 4,
+                    angle: Math.PI / 4
+                });
+            }
+        }
+
+        function drawSpace() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Nebulae gradient spots
+            const grad1 = ctx.createRadialGradient(canvas.width*0.2, canvas.height*0.3, 10, canvas.width*0.2, canvas.height*0.3, 300);
+            grad1.addColorStop(0, 'rgba(255, 0, 127, 0.08)');
+            grad1.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad1;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const grad2 = ctx.createRadialGradient(canvas.width*0.8, canvas.height*0.7, 10, canvas.width*0.8, canvas.height*0.7, 350);
+            grad2.addColorStop(0, 'rgba(0, 240, 255, 0.08)');
+            grad2.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad2;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Twinkling Stars
+            stars.forEach(star => {
+                star.alpha += star.speed;
+                if (star.alpha > 1 || star.alpha < 0) {
+                    star.speed = -star.speed;
+                }
+                ctx.globalAlpha = Math.abs(star.alpha);
+                ctx.fillStyle = star.color;
+                ctx.fillRect(star.x, star.y, star.size * 2, star.size * 2);
+            });
+
+            // Draw Comets
+            addComet();
+            for (let i = comets.length - 1; i >= 0; i--) {
+                const c = comets[i];
+                ctx.globalAlpha = 0.8;
+                const endX = c.x - Math.cos(c.angle) * c.length;
+                const endY = c.y + Math.sin(c.angle) * c.length;
+
+                const grad = ctx.createLinearGradient(c.x, c.y, endX, endY);
+                grad.addColorStop(0, '#ffe600');
+                grad.addColorStop(1, 'transparent');
+
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(c.x, c.y);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+
+                c.x += c.speed;
+                c.y += c.speed;
+
+                if (c.y > canvas.height || c.x > canvas.width) {
+                    comets.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(drawSpace);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- DOM Event Listeners ---
+        window.onload = function() {
+            resizeCanvas();
+            drawSpace();
+
+            // Sound Toggle Handler
+            const soundBtn = document.getElementById('sound-btn');
+            const soundIcon = document.getElementById('sound-icon');
+            const soundText = document.getElementById('sound-text');
+
+            soundBtn.addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                if (soundEnabled) {
+                    soundIcon.className = 'fa-solid fa-volume-high';
+                    soundText.innerText = 'SOUND: ON';
+                    playBeepSound();
+                } else {
+                    soundIcon.className = 'fa-solid fa-volume-xmark';
+                    soundText.innerText = 'SOUND: OFF';
+                }
+            });
+
+            // CRT Scanline Toggle Handler
+            const crtToggle = document.getElementById('crt-toggle');
+            const crtLayer = document.getElementById('crt-layer');
+            const crtStatus = document.getElementById('crt-status');
+
+            crtToggle.addEventListener('click', () => {
+                playBeepSound();
+                if (crtLayer.style.display === 'none') {
+                    crtLayer.style.display = 'block';
+                    crtStatus.innerText = 'ON';
+                } else {
+                    crtLayer.style.display = 'none';
+                    crtStatus.innerText = 'OFF';
+                }
+            });
+
+            // Start Button Click Action: Jump to level1/index.html
+            const startBtn = document.getElementById('start-btn');
+            const toastMsg = document.getElementById('toast-msg');
+
+            startBtn.addEventListener('click', () => {
+                playLaserSound();
+                toastMsg.style.opacity = '1';
+                toastMsg.innerText = '🚀 系統啟動中... 正在載入關卡一！';
+                
+                setTimeout(() => {
+                    window.location.href = 'level1/index.html';
+                }, 600);
+            });
+
+            // Keyboard Press Feedback on Page
+            window.addEventListener('keydown', (e) => {
+                playBeepSound();
+            });
+        };
+    </script>
+</body>
+</html>
